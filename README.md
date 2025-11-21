@@ -25,10 +25,10 @@ All three operations execute within a **single distributed XA transaction** coor
 
 ### Key Technologies
 
-- **Spring Boot 3.2.0** with Java 17
-- **Narayana JTA** (`spring-boot-starter-jta-narayana`) for transaction management
+- **Spring Boot 3.3.5** with Java 17
+- **Narayana JTA** (`me.snowdrop:narayana-spring-boot-starter:2.6.7`) for transaction management
 - **Oracle UCP** (`oracle.ucp.jdbc.PoolXADataSource`) as the ONLY JDBC connection pool (no Hikari, no Atomikos)
-- **IBM MQ 9.3** (`com.ibm.mq.allclient`) for JMS messaging
+- **IBM MQ 9.4** (`com.ibm.mq:com.ibm.mq.jakarta.client:9.4.0.0`) for Jakarta EE 9+ compatible JMS messaging
 - **Spring Data JPA** for data access
 - **Testcontainers** for integration testing with real Oracle and IBM MQ containers
 
@@ -38,10 +38,11 @@ This project is modeled after [spring-boot-atomikos-oracle-db-ibm-mq](https://gi
 
 | Component | Atomikos Version | This (Narayana) Version |
 |-----------|-----------------|-------------------------|
-| JTA Provider | Atomikos | Narayana |
+| JTA Provider | Atomikos | Narayana (Snowdrop starter) |
 | JDBC Pool | Atomikos pool | Oracle UCP |
-| DB XA Resource | AtomikosDataSourceBean | NarayanaDataSourceBean wrapping UCP PoolXADataSource |
-| Spring Boot Starter | N/A (manual config) | `spring-boot-starter-jta-narayana` |
+| DB XA Resource | AtomikosDataSourceBean | NarayanaDataSource wrapping UCP PoolXADataSource |
+| Spring Boot Starter | N/A (manual config) | `me.snowdrop:narayana-spring-boot-starter` |
+| IBM MQ Client | `com.ibm.mq.allclient` (javax) | `com.ibm.mq.jakarta.client` (Jakarta EE 9+) |
 
 **Key Difference**: Narayana is used ONLY for transaction management and XA resource enlistment, not for connection pooling. Oracle UCP provides the actual connection pool.
 
@@ -75,7 +76,7 @@ src/test/java/com/example/narayana/ucp/mqdemo/
    - Configures pool size, timeouts, validation
    - This is the actual connection pool
 
-2. **Wraps with `NarayanaDataSourceBean`**:
+2. **Wraps with `NarayanaDataSource`** (from Snowdrop starter):
    - Enables Narayana to enlist XA connections in distributed transactions
    - Does NOT introduce additional pooling
    - Marked as `@Primary` for auto-wiring
@@ -231,11 +232,11 @@ The tests demonstrate that Narayana coordinates proper 2-phase commit (2PC) acro
 
 ## Important Notes
 
-### Connection Pooling
+### Oracle UCP
 
 - **Oracle UCP** is the ONLY connection pool in this application
 - **Narayana** does NOT pool connections; it only manages transactions
-- `NarayanaDataSourceBean` wraps UCP's `PoolXADataSource` to enable XA enlistment
+- `NarayanaDataSource` (from Snowdrop) wraps UCP's `PoolXADataSource` to enable XA enlistment
 - HikariCP is explicitly disabled via Spring Boot auto-configuration exclusion
 
 ### Transaction Management
