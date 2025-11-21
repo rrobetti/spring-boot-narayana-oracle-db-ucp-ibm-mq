@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: narayana-ucp-mq-demo-test
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+        format_sql: true
+
+  jta:
+    narayana:
+      transaction-manager-id: test-node1
+      log-dir: target/test-narayana-logs
+      default-timeout: 300
+
+# These will be overridden by test configuration using Testcontainers
+oracle:
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521/XEPDB1
+    username: system
+    password: oracle
+    initial-pool-size: 2
+    min-pool-size: 2
+    max-pool-size: 10
+
+ibm:
+  mq:
+    queue-manager: QM1
+    channel: DEV.ADMIN.SVRCONN
+    conn-name: localhost(1414)
+    user: admin
+    password: passw0rd
+    input-queue: DEV.QUEUE.1
+    output-queue: DEV.QUEUE.2
+
+logging:
+  level:
+    com.example.narayana: DEBUG
+    com.arjuna: INFO
+    org.springframework.jms: INFO
+    org.springframework.transaction: INFO
+    org.hibernate.SQL: DEBUG
