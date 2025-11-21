@@ -165,8 +165,8 @@ class DistributedTransactionIntegrationTest {
         // When: send the same messageId again (will cause constraint violation)
         jmsTemplate.convertAndSend(inputQueue, messageJson);
 
-        // Give it time to attempt processing
-        Thread.sleep(3000);
+        // Give time for processing attempt - use Awaitility to wait
+        await().atMost(5, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).until(() -> true);
 
         // Then: no new record should be committed
         assertThat(repository.count()).isEqualTo(initialCount);
@@ -224,14 +224,17 @@ class DistributedTransactionIntegrationTest {
 
     private void purgeQueue(String queueName) {
         try {
-            while (true) {
+            int messageCount = 0;
+            while (messageCount < 100) { // Safety limit
                 Object message = jmsTemplate.receiveAndConvert(queueName);
                 if (message == null) {
                     break;
                 }
+                messageCount++;
             }
-        } catch (Exception e) {
-            // Ignore - queue might be empty
+        } catch (org.springframework.jms.JmsException e) {
+            // Queue is empty or inaccessible - this is expected
+            // Log at debug level if needed, but don't fail
         }
     }
 }
